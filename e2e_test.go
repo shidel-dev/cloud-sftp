@@ -134,7 +134,7 @@ func startTestServer() (*server.Server, *sync.Cond) {
 	m := &sync.Mutex{}
 	m.Lock()
 	cond := sync.NewCond(m)
-	privateBytes, err := ioutil.ReadFile("id_rsa")
+	privateBytes, err := ioutil.ReadFile("testdata/id_rsa")
 	if err != nil {
 		log.Fatal("Failed to load private key", err)
 	}
