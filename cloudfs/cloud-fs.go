@@ -190,6 +190,26 @@ func (fs *CloudFs) Filelist(req *sftp.Request) (sftp.ListerAt, error) {
 		attrs, err := file.Attributes()
 		if err != nil {
 			logger.Error(err)
+			ext := path.Ext(req.Filepath)
+			if len(ext) == 0 {
+				file = &remoteFile{
+					bucket: fs.bucket,
+					path:   path.Join(req.Filepath, folderPlaceHolderName),
+					ctx:    req.Context(),
+				}
+
+				attrs, err := file.Attributes()
+				if err != nil {
+					return nil, errors.New("stat failed")
+				}
+
+				return listerat([]os.FileInfo{&blobFileInfo{
+					key:     req.Filepath,
+					modTime: attrs.ModTime,
+					size:    0,
+					isDir:   true,
+				}}), nil
+			}
 			return nil, errors.New("stat failed")
 		}
 
@@ -198,7 +218,7 @@ func (fs *CloudFs) Filelist(req *sftp.Request) (sftp.ListerAt, error) {
 			modTime: attrs.ModTime,
 			size:    attrs.Size,
 			md5:     attrs.MD5,
-			isDir:   attrs.ContentType == "application/octet-stream", // TODO remove when fileblob is patched
+			isDir:   false,
 		}}), nil
 	case "Readlink":
 		return nil, errors.New("symlinks not supported")

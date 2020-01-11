@@ -128,6 +128,31 @@ func TestE2E(t *testing.T) {
 	if len(list) != 1 {
 		t.Fatal("Too many files for dir when listing")
 	}
+
+	err = client.Mkdir("my_dir")
+	if err != nil {
+		t.Fatalf("Failed to create dir %v", err)
+	}
+
+	info, err := client.Stat("my_dir")
+	if err != nil {
+		t.Fatalf("Failed to stat dir %v", err)
+	}
+
+	if info.Name() != "my_dir" {
+		t.Fatal("Expected dir name to equal my_dir")
+	}
+
+	err = client.RemoveDirectory("my_dir")
+	if err != nil {
+		t.Fatalf("Failed to remove dir %v", err)
+	}
+
+	info, err = client.Stat("my_dir")
+	if err == nil {
+		fmt.Println(info.Name())
+		t.Fatal("Expected stat to error for deleted directory")
+	}
 }
 
 func startTestServer() (*server.Server, *sync.Cond) {
