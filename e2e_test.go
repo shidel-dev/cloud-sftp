@@ -153,6 +153,16 @@ func TestE2E(t *testing.T) {
 		fmt.Println(info.Name())
 		t.Fatal("Expected stat to error for deleted directory")
 	}
+
+	err = client.Remove("hello_miss_president.txt")
+	if err != nil {
+		t.Fatalf("Failed to remove file %v", err)
+	}
+
+	_, err = client.Stat("hello_miss_president.txt")
+	if err == nil {
+		t.Fatalf("Expected there to be an err when stating a deleted file")
+	}
 }
 
 func startTestServer() (*server.Server, *sync.Cond) {
