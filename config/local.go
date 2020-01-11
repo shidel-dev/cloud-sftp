@@ -10,7 +10,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/shidel-dev/sftp-sass/server"
+	"github.com/shidel-dev/cloud-sftp/server"
 )
 
 type local struct {

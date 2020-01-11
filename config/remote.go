@@ -1,6 +1,6 @@
 package config
 
-import "github.com/shidel-dev/sftp-sass/server"
+import "github.com/shidel-dev/cloud-sftp/server"
 
 type remote struct {
 	url string

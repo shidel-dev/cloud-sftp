@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/pkg/sftp"
-	"github.com/shidel-dev/sftp-sass/cloudfs"
+	"github.com/shidel-dev/cloud-sftp/cloudfs"
 	log "github.com/sirupsen/logrus"
 	"gocloud.dev/blob"
 	"golang.org/x/crypto/ssh"

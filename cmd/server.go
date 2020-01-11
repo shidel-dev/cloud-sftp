@@ -3,8 +3,8 @@ package cmd
 import (
 	"io/ioutil"
 
-	"github.com/shidel-dev/sftp-sass/config"
-	"github.com/shidel-dev/sftp-sass/server"
+	"github.com/shidel-dev/cloud-sftp/config"
+	"github.com/shidel-dev/cloud-sftp/server"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"

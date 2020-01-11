@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/shidel-dev/sftp-sass/config"
+	"github.com/shidel-dev/cloud-sftp/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

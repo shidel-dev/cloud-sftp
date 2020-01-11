@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shidel-dev/sftp-sass/config"
+	"github.com/shidel-dev/cloud-sftp/config"
 
 	"github.com/pkg/sftp"
-	"github.com/shidel-dev/sftp-sass/server"
+	"github.com/shidel-dev/cloud-sftp/server"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )

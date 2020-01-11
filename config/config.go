@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/shidel-dev/sftp-sass/server"
+	"github.com/shidel-dev/cloud-sftp/server"
 )
 
 var validGoCloudURLPrefixes = []string{
