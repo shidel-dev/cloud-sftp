@@ -83,6 +83,12 @@ func (s *Server) serve(conn net.Conn) {
 		}
 	}
 
+	if s.config.PublicKeyCallback != nil {
+		config.PublicKeyCallback = func(c ssh.ConnMetadata, pk ssh.PublicKey) (*ssh.Permissions, error) {
+			return nil, s.config.PublicKeyCallback(c, pk)
+		}
+	}
+
 	config.AddHostKey(s.config.HostKey)
 	// Before use, a handshake must be performed on the incoming net.Conn.
 	sconn, chans, reqs, err := ssh.NewServerConn(conn, config)
