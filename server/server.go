@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/pkg/sftp"
 	"github.com/shidel-dev/cloud-sftp/cloudfs"
@@ -21,7 +22,7 @@ type Config struct {
 	Port              int
 	PasswordCallback  PasswordCallback
 	PublicKeyCallback PublicKeyCallback
-	DriverURLCallback DriverURLCallback
+	BucketCallback    BucketCallback
 	DriverURL         string
 }
 
@@ -31,13 +32,15 @@ type PasswordCallback func(c ssh.ConnMetadata, pass []byte) error
 //PublicKeyCallback authenticates a ssh connection given a public key
 type PublicKeyCallback func(conn ssh.ConnMetadata, key ssh.PublicKey) error
 
-//DriverURLCallback when not nil allows a driver URL to be supplied
-type DriverURLCallback func(conn ssh.ConnMetadata) (string, error)
+//BucketCallback returns a pointer to a blob.Bucket to be used for the duration of the sftp session
+type BucketCallback func(conn ssh.ConnMetadata) (*blob.Bucket, error)
 
 //Server Creates/Operates a sftp server
 type Server struct {
-	config     *Config
-	sftpServer *sftp.Server
+	config   *Config
+	running  bool
+	listener *net.TCPListener
+	wg       *sync.WaitGroup
 }
 
 //NewServer Creates a new Server
@@ -47,12 +50,20 @@ func NewServer(config *Config) *Server {
 	}
 }
 
-//ListenAndServe listens on the TCP network address addr, and serves sftp requests based on the provided Config
+//ListenAndServe listens on the TCP network address specified by BindAddr,and Port. It serves sftp requests based on the provided Config
 func (s *Server) ListenAndServe(cond *sync.Cond) error {
-	listener, err := net.Listen("tcp", fmt.Sprintf("%v:%v", s.config.BindAddr, s.config.Port))
+	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%v:%v", s.config.BindAddr, s.config.Port))
 	if err != nil {
-		log.Fatal("failed to listen for connection", err)
+		return fmt.Errorf("fail to resolve addr: %v", err)
 	}
+	listener, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		log.Fatal("failed to listen for connection ", err)
+	}
+	defer listener.Close()
+	s.wg = &sync.WaitGroup{}
+	s.listener = listener
+	s.running = true
 	fmt.Printf("Listening on %v\n", listener.Addr())
 	if cond != nil {
 		cond.Broadcast()
@@ -60,31 +71,34 @@ func (s *Server) ListenAndServe(cond *sync.Cond) error {
 	for {
 		nConn, err := listener.Accept()
 		if err != nil {
-			log.Fatal("failed to accept incoming connection", err)
+			if !s.running {
+				break
+			}
+			log.Error("failed to accept incoming connection ", err)
 		}
 
 		go s.serve(nConn)
 	}
+	return nil
 }
 
 func (s *Server) serve(conn net.Conn) {
+	s.wg.Add(1)
 	defer conn.Close()
+	defer s.wg.Done()
 	config := &ssh.ServerConfig{}
 	var connectionMetadata ssh.ConnMetadata
 
-	config.BannerCallback = func(c ssh.ConnMetadata) string {
-		connectionMetadata = c
-		return ""
-	}
-
 	if s.config.PasswordCallback != nil {
 		config.PasswordCallback = func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
+			connectionMetadata = c
 			return nil, s.config.PasswordCallback(c, pass)
 		}
 	}
 
 	if s.config.PublicKeyCallback != nil {
 		config.PublicKeyCallback = func(c ssh.ConnMetadata, pk ssh.PublicKey) (*ssh.Permissions, error) {
+			connectionMetadata = c
 			return nil, s.config.PublicKeyCallback(c, pk)
 		}
 	}
@@ -94,10 +108,9 @@ func (s *Server) serve(conn net.Conn) {
 	sconn, chans, reqs, err := ssh.NewServerConn(conn, config)
 
 	if err != nil {
-		log.Fatal("failed to handshake", err)
+		log.Error("failed to handshake ", err)
+		return
 	}
-	log.Println("login detected:", sconn.User())
-	log.Debug("SSH server established")
 
 	// The incoming Request channel must be serviced.
 	go ssh.DiscardRequests(reqs)
@@ -144,30 +157,28 @@ func (s *Server) serve(conn net.Conn) {
 			"user":   "testuser",
 		})
 
-		driverURL := ""
-		if s.config.DriverURLCallback != nil {
-			if connectionMetadata == nil {
-				log.Error("Missing connectionMetadata")
-				return
-			}
+		var bucket *blob.Bucket
 
-			driverURL, err = s.config.DriverURLCallback(connectionMetadata)
+		if s.config.BucketCallback != nil {
+			bucket, err = s.config.BucketCallback(connectionMetadata)
 			if err != nil {
-				log.Errorf("DriverURLCallback failed %v", err)
+				taggedLogger.Errorf("BucketCallback failed %v", err)
 				return
 			}
 		} else {
-			driverURL = s.config.DriverURL
+			driverURL := s.config.DriverURL
+
+			if len(driverURL) == 0 {
+				log.Error("Missing DriverURL")
+				return
+			}
+
+			bucket, err = blob.OpenBucket(context.Background(), driverURL)
+			if err != nil {
+				taggedLogger.Error("Failed to OpenBucket %v", err)
+			}
 		}
 
-		fmt.Println(driverURL)
-
-		if len(driverURL) == 0 {
-			log.Error("Missing DriverURL")
-			return
-		}
-
-		bucket, err := blob.OpenBucket(context.Background(), driverURL)
 		if err != nil {
 			log.Errorf("Failed to open bucket %v", err)
 			return
@@ -185,18 +196,18 @@ func (s *Server) serve(conn net.Conn) {
 		if err := server.Serve(); err == io.EOF {
 			bucket.Close()
 			server.Close()
-			log.Print("sftp client exited session.")
+			break
 		} else if err != nil {
 			log.Errorf("sftp server completed with error: %v", err)
+			break
 		}
 	}
 }
 
 //Close stops a running sftp server
 func (s *Server) Close() error {
-	if s.sftpServer != nil {
-		return s.sftpServer.Close()
-	}
-
+	s.running = false
+	s.listener.SetDeadline(time.Now())
+	s.wg.Wait()
 	return nil
 }
