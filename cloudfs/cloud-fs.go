@@ -30,6 +30,7 @@ func New(bucket *blob.Bucket, logger *logrus.Entry) *CloudFs {
 	}
 }
 
+//Fileread handles sftp file read requests
 func (fs *CloudFs) Fileread(req *sftp.Request) (io.ReaderAt, error) {
 	fs.logger.WithFields(log.Fields{
 		"path": req.Filepath,
@@ -42,6 +43,7 @@ func (fs *CloudFs) Fileread(req *sftp.Request) (io.ReaderAt, error) {
 	}, nil
 }
 
+//Filewrite handles sftp file write requests
 func (fs *CloudFs) Filewrite(req *sftp.Request) (io.WriterAt, error) {
 	fs.logger.WithFields(log.Fields{
 		"path": req.Filepath,
@@ -49,6 +51,7 @@ func (fs *CloudFs) Filewrite(req *sftp.Request) (io.WriterAt, error) {
 	return newRemoteFileWriter(req.Context(), fs.bucket, req.Filepath)
 }
 
+//Filecmd handles sftp file cmd requests
 func (fs *CloudFs) Filecmd(req *sftp.Request) error {
 	logger := fs.logger.WithFields(log.Fields{
 		"path":   req.Filepath,
@@ -119,6 +122,7 @@ func (fs *CloudFs) Filecmd(req *sftp.Request) error {
 	return nil
 }
 
+//Filelist handles sftp file list requests
 func (fs *CloudFs) Filelist(req *sftp.Request) (sftp.ListerAt, error) {
 	logger := fs.logger.WithFields(log.Fields{
 		"path":   req.Filepath,
