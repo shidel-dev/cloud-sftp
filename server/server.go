@@ -107,6 +107,7 @@ func (s *Server) serve(conn net.Conn) {
 	// Before use, a handshake must be performed on the incoming net.Conn.
 	sconn, chans, reqs, err := ssh.NewServerConn(conn, config)
 
+	fmt.Printf("Login detected: %v", sconn.User())
 	if err != nil {
 		log.Error("failed to handshake ", err)
 		return

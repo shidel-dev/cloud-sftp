@@ -46,16 +46,7 @@ func (fs *CloudFs) Filewrite(req *sftp.Request) (io.WriterAt, error) {
 	fs.logger.WithFields(log.Fields{
 		"path": req.Filepath,
 	}).Info("Beginning FileWrite request")
-	w, err := fs.bucket.NewWriter(req.Context(), req.Filepath, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	remoteWriter := &remoteFileWriter{
-		writer: w,
-	}
-
-	return remoteWriter, nil
+	return newRemoteFileWriter(req.Context(), fs.bucket, req.Filepath)
 }
 
 func (fs *CloudFs) Filecmd(req *sftp.Request) error {
