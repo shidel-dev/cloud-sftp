@@ -1,0 +1,12 @@
+version: '3'
+services:
+  minio:
+    image: minio/minio
+    command: server /data
+    environment:
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: miniosecret
+    volumes:
+      - "$HOME/cloud_sftp_minio_data:/data"
+    ports:
+      - "9000:9000"
