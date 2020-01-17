@@ -17,13 +17,14 @@ import (
 
 //Config configuration for a sftp server
 type Config struct {
-	HostKey           ssh.Signer
-	BindAddr          string
-	Port              int
-	PasswordCallback  PasswordCallback
-	PublicKeyCallback PublicKeyCallback
-	BucketCallback    BucketCallback
-	DriverURL         string
+	HostKey               ssh.Signer
+	BindAddr              string
+	Port                  int
+	PasswordCallback      PasswordCallback
+	PublicKeyCallback     PublicKeyCallback
+	BucketCallback        BucketCallback
+	NewServerConnCallback NewServerConnCallback
+	DriverURL             string
 }
 
 //PasswordCallback authenticates a ssh connection by password
@@ -34,6 +35,9 @@ type PublicKeyCallback func(conn ssh.ConnMetadata, key ssh.PublicKey) error
 
 //BucketCallback returns a pointer to a blob.Bucket to be used for the duration of the sftp session
 type BucketCallback func(conn ssh.ConnMetadata) (*blob.Bucket, error)
+
+//NewServerConnCallback is called when a new ssh server connection is created
+type NewServerConnCallback func(scon *ssh.ServerConn)
 
 //Server Creates/Operates a sftp server
 type Server struct {
@@ -106,12 +110,15 @@ func (s *Server) serve(conn net.Conn) {
 	config.AddHostKey(s.config.HostKey)
 	// Before use, a handshake must be performed on the incoming net.Conn.
 	sconn, chans, reqs, err := ssh.NewServerConn(conn, config)
-
-	fmt.Printf("Login detected: %v", sconn.User())
 	if err != nil {
 		log.Error("failed to handshake ", err)
 		return
 	}
+
+	if s.config.NewServerConnCallback != nil {
+		s.config.NewServerConnCallback(sconn)
+	}
+	fmt.Printf("Login detected: %v", sconn.User())
 
 	// The incoming Request channel must be serviced.
 	go ssh.DiscardRequests(reqs)
