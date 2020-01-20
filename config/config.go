@@ -1,10 +1,13 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/shidel-dev/cloud-sftp/server"
+	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/crypto/ssh"
 )
 
 var validGoCloudURLPrefixes = []string{
@@ -60,12 +63,39 @@ func ParseConfigSource(configSource string) (Provider, error) {
 	}
 
 	if isGoCloudURL {
-		// return &remote{
-		// 	url: configSource,
-		// }, nil
+		return newRemoteConfigProvider(configSource)
 	}
 
 	return &local{
 		path: configSource,
 	}, nil
+}
+
+func passwordCallback(c *ServerConfig) server.PasswordCallback {
+	return func(cm ssh.ConnMetadata, password []byte) error {
+		username := cm.User()
+
+		match := false
+		for _, u := range c.Users {
+			if u.UserName == username {
+				if len(u.PasswordHash) != 0 {
+					err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), password)
+					if err != nil {
+						fmt.Println(err)
+						return errors.New("incorrect username or password")
+					}
+
+					match = true
+					break
+				}
+			}
+		}
+
+		if match {
+			return nil
+		}
+
+		fmt.Println("Username not found")
+		return errors.New("incorrect username or Password")
+	}
 }

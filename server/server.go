@@ -183,7 +183,7 @@ func (s *Server) serve(conn net.Conn) {
 
 			bucket, err = blob.OpenBucket(context.Background(), driverURL)
 			if err != nil {
-				taggedLogger.Error("Failed to OpenBucket %v", err)
+				taggedLogger.Errorf("Failed to OpenBucket %v", err)
 			}
 		}
 

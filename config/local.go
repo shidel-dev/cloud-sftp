@@ -3,12 +3,10 @@ package config
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 
 	"golang.org/x/crypto/bcrypt"
-	"golang.org/x/crypto/ssh"
 
 	"github.com/shidel-dev/cloud-sftp/server"
 )
@@ -25,38 +23,11 @@ func (l *local) ServerConfig(defaultConfig server.Config) (*server.Config, error
 	}
 
 	return &server.Config{
-		Port:      defaultConfig.Port,
-		BindAddr:  defaultConfig.BindAddr,
-		HostKey:   defaultConfig.HostKey,
-		DriverURL: c.DriverURL,
-		PasswordCallback: func(cm ssh.ConnMetadata, password []byte) error {
-			username := cm.User()
-			fmt.Println(username)
-			fmt.Println(string(password))
-
-			match := false
-			for _, u := range c.Users {
-				if u.UserName == username {
-					if len(u.PasswordHash) != 0 {
-						err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), password)
-						if err != nil {
-							fmt.Println(err)
-							return errors.New("incorrect username or password")
-						}
-
-						match = true
-						break
-					}
-				}
-			}
-
-			if match {
-				return nil
-			}
-
-			fmt.Println("Username not found")
-			return errors.New("incorrect username or Password")
-		},
+		Port:             defaultConfig.Port,
+		BindAddr:         defaultConfig.BindAddr,
+		HostKey:          defaultConfig.HostKey,
+		DriverURL:        c.DriverURL,
+		PasswordCallback: passwordCallback(c),
 	}, nil
 }
 
