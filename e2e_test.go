@@ -36,7 +36,7 @@ func TestE2EFile(t *testing.T) {
 
 	os.Remove("test-config.json")
 	c := config.ServerConfig{
-		DriverURL: "file:///Users/joeshidel/sftp-test",
+		StorageURL: "file:///Users/joeshidel/sftp-test",
 	}
 	d, err := json.Marshal(&c)
 	if err != nil {

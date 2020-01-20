@@ -24,7 +24,7 @@ type Config struct {
 	PublicKeyCallback     PublicKeyCallback
 	BucketCallback        BucketCallback
 	NewServerConnCallback NewServerConnCallback
-	DriverURL             string
+	StorageURL            string
 }
 
 //PasswordCallback authenticates a ssh connection by password
@@ -174,7 +174,7 @@ func (s *Server) serve(conn net.Conn) {
 				return
 			}
 		} else {
-			driverURL := s.config.DriverURL
+			driverURL := s.config.StorageURL
 
 			if len(driverURL) == 0 {
 				log.Error("Missing DriverURL")

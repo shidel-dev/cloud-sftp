@@ -46,7 +46,7 @@ func (r *remote) ServerConfig(defaultConfig server.Config) (*server.Config, erro
 		Port:             defaultConfig.Port,
 		BindAddr:         defaultConfig.BindAddr,
 		HostKey:          defaultConfig.HostKey,
-		DriverURL:        c.DriverURL,
+		StorageURL:       c.StorageURL,
 		PasswordCallback: passwordCallback(c),
 	}, nil
 }

@@ -26,7 +26,7 @@ func (l *local) ServerConfig(defaultConfig server.Config) (*server.Config, error
 		Port:             defaultConfig.Port,
 		BindAddr:         defaultConfig.BindAddr,
 		HostKey:          defaultConfig.HostKey,
-		DriverURL:        c.DriverURL,
+		StorageURL:       c.StorageURL,
 		PasswordCallback: passwordCallback(c),
 	}, nil
 }

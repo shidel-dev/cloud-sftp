@@ -28,8 +28,8 @@ type Provider interface {
 
 //ServerConfig specfies how to connect to blob storage, and specfies users and their permissions
 type ServerConfig struct {
-	Users     []UserConfig `json:"users"`
-	DriverURL string       `json:"driver_url"`
+	Users      []UserConfig `json:"users"`
+	StorageURL string       `json:"storage_url"`
 }
 
 //UserConfig specfies a user and their permissions
