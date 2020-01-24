@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"sync"
 	"testing"
 
@@ -28,15 +29,23 @@ import (
 )
 
 func TestE2EFile(t *testing.T) {
-	_ = os.RemoveAll("/Users/joeshidel/sftp-test")
-	err := os.Mkdir("/Users/joeshidel/sftp-test", 0700)
+
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal("Failed to get working dir", err)
+	}
+
+	tmpDir := path.Join(wd, "/tmp/sftp-test")
+
+	_ = os.RemoveAll(tmpDir)
+	err = os.MkdirAll(tmpDir, 0700)
 	if err != nil {
 		t.Fatal("Could not create sftp-test dir")
 	}
 
 	os.Remove("test-config.json")
 	c := config.ServerConfig{
-		StorageURL: "file:///Users/joeshidel/sftp-test",
+		StorageURL: fmt.Sprintf("file://%v", tmpDir),
 	}
 	d, err := json.Marshal(&c)
 	if err != nil {
@@ -216,7 +225,7 @@ func startTestServer(c *server.Config) (*server.Server, *sync.Cond) {
 	m.Lock()
 	cond := sync.NewCond(m)
 
-	server := server.NewServer(c)
+	server := server.New(c)
 	go func() {
 		err := server.ListenAndServe(cond)
 		if err != nil {
