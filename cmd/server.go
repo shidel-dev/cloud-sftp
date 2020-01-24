@@ -55,7 +55,7 @@ var serverCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		server := server.NewServer(serverConfig)
+		server := server.New(serverConfig)
 		err = server.ListenAndServe(nil)
 		if err != nil {
 			log.Fatal("Failed to start server", err)

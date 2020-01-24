@@ -47,8 +47,8 @@ type Server struct {
 	wg       *sync.WaitGroup
 }
 
-//NewServer Creates a new Server
-func NewServer(config *Config) *Server {
+//New Creates a Server
+func New(config *Config) *Server {
 	return &Server{
 		config: config,
 	}
