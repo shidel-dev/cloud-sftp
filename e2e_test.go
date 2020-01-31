@@ -43,7 +43,6 @@ func TestE2EFile(t *testing.T) {
 		t.Fatal("Could not create sftp-test dir")
 	}
 
-	os.Remove("test-config.json")
 	c := config.ServerConfig{
 		StorageURL: fmt.Sprintf("file://%v", tmpDir),
 	}
@@ -51,9 +50,12 @@ func TestE2EFile(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed to encode ServerConfig as json")
 	}
-	ioutil.WriteFile("test-config.json", d, 0700)
-
-	provider, err := config.ParseConfigSource("test-config.json")
+	err = ioutil.WriteFile("tmp/test-config.json", d, 0700)
+	if err != nil {
+		t.Fatalf("Failed to write config %v", err)
+	}
+	defer os.Remove("tmp/test-config.json")
+	provider, err := config.ParseConfigSource("tmp/test-config.json")
 	if err != nil {
 		t.Fatalf("Failed to ParseConfigSource %v", err)
 	}
